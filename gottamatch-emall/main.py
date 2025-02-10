@@ -5,10 +5,7 @@ from thefuzz import fuzz, process
 # Define file paths
 nolli_file = "nolli_points_open.geojson"
 geojson_files = [
-    "node.geojson",
-    "relation.geojson",
-    "way_building.geojson",
-    "way_highway.geojson"
+    "rome.json"
 ]
 
 # Load Nolli data
@@ -38,14 +35,17 @@ for feature in nolli_features:
 
 # Function to perform fuzzy search
 def find_best_matches(search_names, features, key_field="name", threshold=80):
+    if 'n/a' in search_names:
+        search_names.remove('n/a')
     matches = []
     for feature in features:
         properties = feature.get("properties", {})
         if key_field in properties:
             feature_name = properties[key_field]
-            best_match, score = process.extractOne(feature_name, search_names, scorer=fuzz.partial_ratio)
+            best_match, score = process.extractOne(feature_name, search_names, scorer=fuzz.ratio)
             if score >= threshold:
-                matches.append((feature, best_match, score))
+                matches.append((feature_name, best_match, score))
+                #matches.append((feature, feature_name, best_match, score))
     return matches
 
 # Perform fuzzy matching for each Nolli point
@@ -58,8 +58,8 @@ for nolli_id, names in nolli_names.items():
         features = data.get("features", [])
         
         # Check multiple possible name fields
-        for key_field in ["name", "alt_name", "wikidata", "wikipedia"]:
-            matches = find_best_matches(names, features, key_field, threshold=80)
+        for key_field in ["name"]: #, "alt_name", "wikidata", "wikipedia"]:
+            matches = find_best_matches(names, features, key_field, threshold=85)
             if matches:
                 matched_results[nolli_id].extend([(file, key_field, match) for match in matches])
 
