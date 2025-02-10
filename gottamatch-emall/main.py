@@ -4,19 +4,15 @@ from thefuzz import fuzz, process
 
 # Define file paths
 nolli_file = "nolli_points_open.geojson"
-geojson_files = [
-    "rome.json"
-]
+geojson_files = "osm_node_way_relation.geojson"
 
 # Load Nolli data
 with open(nolli_file, "r", encoding="utf-8") as f:
     nolli_data = json.load(f)
 
 # Load other GeoJSON data
-geojson_data = {}
-for file in geojson_files:
-    with open(file, "r", encoding="utf-8") as f:
-        geojson_data[file] = json.load(f)
+with open(geojson_files, "r", encoding="utf-8") as f:
+    geojson_data = json.load(f)
 
 # Extract relevant names from Nolli points
 nolli_features = nolli_data["features"]
@@ -54,14 +50,13 @@ matched_results = {}
 for nolli_id, names in nolli_names.items():
     matched_results[nolli_id] = []
 
-    for file, data in geojson_data.items():
-        features = data.get("features", [])
-        
-        # Check multiple possible name fields
-        for key_field in ["name"]: #, "alt_name", "wikidata", "wikipedia"]:
-            matches = find_best_matches(names, features, key_field, threshold=85)
-            if matches:
-                matched_results[nolli_id].extend([(file, key_field, match) for match in matches])
+    features = geojson_data.get("features", [])
+    
+    # Check multiple possible name fields
+    for key_field in ["name"]: #, "alt_name", "wikidata", "wikipedia"]:
+        matches = find_best_matches(names, features, key_field, threshold=85)
+        if matches:
+            matched_results[nolli_id].extend([(key_field, match) for match in matches])
 
 # Save results to a JSON file
 output_file = "matched_nolli_features.json"
