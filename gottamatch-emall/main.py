@@ -29,6 +29,8 @@ for feature in nolli_features:
     if possible_names:
         nolli_names[feature["properties"]["Nolli Number"]] = possible_names
 
+tot_entries = len(nolli_names.keys())
+
 # Function to perform fuzzy search
 def find_best_matches(search_names, features, key_field="name", threshold=80):
     if 'n/a' in search_names:
@@ -41,22 +43,30 @@ def find_best_matches(search_names, features, key_field="name", threshold=80):
             best_match, score = process.extractOne(feature_name, search_names, scorer=fuzz.ratio)
             if score >= threshold:
                 matches.append((feature_name, best_match, score))
-                #matches.append((feature, feature_name, best_match, score))
-    return matches
+                # matches.append((feature, feature_name, best_match, score))
+    if len(matches) > 0:
+        return  [max(matches, key=lambda x: x[-1])], 1
+    return matches, 0
 
 # Perform fuzzy matching for each Nolli point
 matched_results = {}
 
+counter = 0
+print(f"Searching best match for Nolli name:")
 for nolli_id, names in nolli_names.items():
+    print(f"\t{nolli_id}\t{names[0]}")
     matched_results[nolli_id] = []
 
     features = geojson_data.get("features", [])
-    
+
     # Check multiple possible name fields
     for key_field in ["name"]: #, "alt_name", "wikidata", "wikipedia"]:
-        matches = find_best_matches(names, features, key_field, threshold=85)
+        matches, j = find_best_matches(names, features, key_field, threshold=85)
+        counter += j
         if matches:
             matched_results[nolli_id].extend([(key_field, match) for match in matches])
+
+print(f"MATCHED {counter} NOLLY ENTRY OUT OF {tot_entries} EXISTENT ENTRIES")
 
 # Save results to a JSON file
 output_file = "matched_nolli_features.json"
