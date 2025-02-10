@@ -10,6 +10,7 @@
                 "mhutchie.git-graph"          
             ],
             "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
                 "python.defaultInterpreterPath": "/usr/local/bin/python"
             }
         }
