@@ -4,15 +4,15 @@ from thefuzz import fuzz, process
 
 # Define file paths
 nolli_file = "nolli_points_open.geojson"
-geojson_files = "osm_node_way_relation.geojson"
+osm_file = "osm_node_way_relation.geojson"
 
-# Load Nolli data
+# Load Nolli GeoJSON data
 with open(nolli_file, "r", encoding="utf-8") as f:
     nolli_data = json.load(f)
 
-# Load other GeoJSON data
-with open(geojson_files, "r", encoding="utf-8") as f:
-    geojson_data = json.load(f)
+# Load OpenStreetMaps (OSM) GeoJSON data
+with open(osm_file, "r", encoding="utf-8") as f:
+    osm_data = json.load(f)
 
 # Extract relevant names from Nolli points
 nolli_features = nolli_data["features"]
@@ -50,7 +50,7 @@ matched_results = {}
 for nolli_id, names in nolli_names.items():
     matched_results[nolli_id] = []
 
-    features = geojson_data.get("features", [])
+    features = osm_data.get("features", [])
     
     # Check multiple possible name fields
     for key_field in ["name"]: #, "alt_name", "wikidata", "wikipedia"]:
