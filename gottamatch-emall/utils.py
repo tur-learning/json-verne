@@ -123,9 +123,9 @@ def find_best_matches(search_names, features, key_field="name", threshold=80, sc
         unique_match = max(matches, key=lambda x: x[2])  # Choose match with highest score
         coords_to_convert = unique_match[-1]["osm_coords"]
         unique_match[-1]["osm_coords"] = extract_coords(coords_to_convert)
-        return unique_match, 1
+        return unique_match
 
-    return None, 0
+    return None
 
 
 def save_to_json(data, output_file):
