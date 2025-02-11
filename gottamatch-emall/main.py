@@ -1,19 +1,19 @@
 import json
-import os
-from thefuzz import fuzz, process
-from utils import *
+from utils import extract_files, load_data, find_best_matches, save_to_json, save_to_geojson
+
+# Define ZIP archive and files to extract
+zip_file = "geojson_data.zip"
+geojson_files = ["nolli_points_open.geojson", "osm_node_way_relation.geojson"]
+
+# Extract the required files
+extracted_files = extract_files(zip_file, geojson_files)
 
 # Define file paths
-nolli_file = "nolli_points_open.geojson"
-osm_file = "osm_node_way_relation.geojson"
+nolli_file, osm_file = extracted_files
 
-# Load Nolli GeoJSON data
-with open(nolli_file, "r", encoding="utf-8") as f:
-    nolli_data = json.load(f)
-
-# Load OpenStreetMaps (OSM) GeoJSON data
-with open(osm_file, "r", encoding="utf-8") as f:
-    osm_data = json.load(f)
+# Load the extracted GeoJSON files
+nolli_data = load_data(nolli_file)
+osm_data = load_data(osm_file)
 
 # Extract relevant names from Nolli points
 nolli_features = nolli_data["features"]
@@ -29,59 +29,29 @@ for feature in nolli_features:
     possible_names = [name for name in possible_names if name]  # Remove empty names
     if possible_names:
         nolli_id = feature["properties"]["Nolli Number"]
-        # nolli_names[feature["properties"]["Nolli Number"]] = possible_names
         nolli_relevant_data[nolli_id] = {
             "nolli_names": possible_names,
             "nolli_coords": feature["geometry"]
         }
 
-
-# tot_entries = len(nolli_names.keys())
-
-# Function to perform fuzzy search
-def find_best_matches(search_names, features, key_field="name", threshold=80):
-    if 'n/a' in search_names:
-        search_names.remove('n/a')
-    matches = []
-    for feature in features:
-        properties = feature.get("properties", {})
-        if key_field in properties:
-            feature_name = properties[key_field]
-            best_match, score = process.extractOne(feature_name, search_names, scorer=fuzz.ratio)
-            if score >= threshold:
-                matches.append((feature_name, best_match, score, 
-                                {"osm_coords": feature["geometry"]["coordinates"]}))
-                # matches.append((feature, feature_name, best_match, score))
-    if len(matches) > 0:
-        unique_match = max(matches, key=lambda x: x[2])
-        coords2convert = unique_match[-1]["osm_coords"]
-        unique_match[-1]["osm_coords"] = extract_coords(coords2convert)
-        return  unique_match, 1
-    return None, 0
-
 # Perform fuzzy matching for each Nolli point
-# matched_results = {}
-
 counter = 0
-print(f"Searching best match for Nolli name:")
+print(f"Searching best match for Nolli names:")
+
 for nolli_id, values in nolli_relevant_data.items():
     names = values["nolli_names"]
     print(f"\t{nolli_id}\t{names[0]}")
-    # matched_results[nolli_id] = []
 
     features = osm_data.get("features", [])
     
-    # Check multiple possible name fields
-    for key_field in ["name"]: #, "alt_name", "wikidata", "wikipedia"]:
-        match, j = find_best_matches(names, features, key_field, threshold=85)
-        counter += j
-        nolli_relevant_data[nolli_id]["match"] = match
+    match, j = find_best_matches(names, features, key_field="name", threshold=85)#, scorer="partial_ratio")
+    counter += j
+    nolli_relevant_data[nolli_id]["match"] = match
         
 print(f"MATCHED {counter} NOLLY ENTRIES")
 
-# Save results to a JSON file
-output_file = "matched_nolli_features.json"
-with open(output_file, "w", encoding="utf-8") as f:
-    json.dump(nolli_relevant_data, f, indent=2, ensure_ascii=False)
+# Save results
+save_to_json(nolli_relevant_data, "matched_nolli_features.json")
+save_to_geojson(nolli_relevant_data, "matched_nolli_features.geojson")
 
-print(f"Matching complete. Results saved to {output_file}.")
+print(f"Matching complete. Results saved.")
