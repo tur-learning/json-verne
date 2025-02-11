@@ -6,49 +6,55 @@ zip_file = "geojson_data.zip"
 geojson_files = ["nolli_points_open.geojson", "osm_node_way_relation.geojson"]
 
 # Extract the required files
-extracted_files = extract_files(zip_file, geojson_files)
+nolli_file, osm_file = extract_files(zip_file, geojson_files)
 
-# Define file paths
-nolli_file, osm_file = extracted_files
-
+# TODO
 # Load the extracted GeoJSON files
-nolli_data = load_data(nolli_file)
-osm_data = load_data(osm_file)
+#
+# nolli_data = # load the data using utils functions
+# osm_data = # load the data using utils functions
 
-# Extract relevant names from Nolli points
-nolli_features = nolli_data["features"]
-nolli_relevant_data = {}
+# TODO
+# Extract Nolli features and initialize 
+# dictionary to put data in
+#
+# nolli_features = 
+# nolli_relevant_data = {}
 
-for feature in nolli_features:
-    properties = feature.get("properties", {})
-    possible_names = [
-        properties.get("Nolli Name", ""),
-        properties.get("Unravelled Name", ""),
-        properties.get("Modern Name", ""),
-    ]
-    possible_names = [name for name in possible_names if name]  # Remove empty names
-    if possible_names:
-        nolli_id = feature["properties"]["Nolli Number"]
-        nolli_relevant_data[nolli_id] = {
-            "nolli_names": possible_names,
-            "nolli_coords": feature["geometry"]
-        }
+# TODO
+# create a smaller dictionary with the following
+# structure for each Nolli feature
+# 
+# "1319": {
+# "nolli_names": [
+#   "Mole Adriana, or Castel S. Angelo",
+#   "Mole Adriana, or Castel Sant'Angelo",
+#   "Castel Sant'Angelo"
+# ],
+# "nolli_coords": {
+#   "type": "Point",
+#   "coordinates": [
+#     12.46670095,
+#     41.90329709
+#   ]
+# }
+# for feature in nolli_features: # Start from here
 
+# TODO
 # Perform fuzzy matching for each Nolli point
-counter = 0
-print(f"Searching best match for Nolli names:")
-
-for nolli_id, values in nolli_relevant_data.items():
-    names = values["nolli_names"]
-    print(f"\t{nolli_id}\t{names[0]}")
-
-    features = osm_data.get("features", [])
-    
-    match, j = find_best_matches(names, features, key_field="name", threshold=85)#, scorer="partial_ratio")
-    counter += j
-    nolli_relevant_data[nolli_id]["match"] = match
-        
-print(f"MATCHED {counter} NOLLY ENTRIES")
+# use the appropriate function you find in utils
+# print(f"Searching best match for Nolli names:")
+#
+# for nolli_id, values in nolli_relevant_data.items():
+#
+#   Do some operation on data
+#
+#   Call function to obtain best match for each entry
+#   in the Nolli map   
+#
+#   match = 
+#   Put data in dictionary
+#   nolli_relevant_data[nolli_id]["match"] = match
 
 # Save results
 save_to_json(nolli_relevant_data, "matched_nolli_features.json")
