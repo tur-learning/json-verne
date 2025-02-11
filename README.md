@@ -1,4 +1,4 @@
-## **🌍 JSON-Verne: Navigating the World of GeoJSON** 
+# **🌍 JSON-Verne: Navigating the World of GeoJSON** 
 
 A **clever** reference to **Jules Verne** and **GeoJSON**—because mapping history and data is an adventure! 🚀📍  
 
