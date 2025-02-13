@@ -1,29 +1,33 @@
-# HINT: You'll likely need to import the same utility functions we used before.
-# from utils import extract_files, load_data, find_best_matches, save_to_json, save_to_geojson
+# Import necessary functions from utils.py
+from utils import extract_files, load_data, find_best_matches, save_to_json, save_to_geojson
 
 ###############################
 # 1) Define the input files
 ###############################
-# HINT: You have a ZIP file containing GeoJSON files to process.
-# zip_file = "geojson_data.zip"
-# geojson_files = ["nolli_points_open.geojson", "osm_node_way_relation.geojson"]
+# HINT: The data is stored inside a ZIP archive.
+# You need to extract two GeoJSON files:
+# - `nolli_points_open.geojson`: Contains historical Nolli map features.
+# - `osm_node_way_relation.geojson`: Contains OpenStreetMap (OSM) features.
+
+zip_file = "geojson_data.zip"
+geojson_files = ["nolli_points_open.geojson", "osm_node_way_relation.geojson"]
 
 ###############################
 # 2) Extract GeoJSON files
 ###############################
-# HINT: Use the utils function `extract_files(zip_file, geojson_files)` to extract 
-#       the required GeoJSON files from the ZIP archive.
-#       This function returns a list of extracted file paths.
+# HINT: Use the function `extract_files()` to extract the required files.
+# This function returns a list of extracted file paths.
 
 # extracted_files = ...
-
-# HINT: You can destructure them like this (if they always come in a certain order):
-# nolli_file, osm_file = extracted_files
+# nolli_file, osm_file = extracted_files  # Unpack the extracted file paths
 
 ###############################
 # 3) Load the GeoJSON data
 ###############################
-# HINT: Use the utils function `load_data(filename)` to read the JSON content of each file.
+# HINT: Use the function `load_data()` to read the JSON content of each extracted file.
+# You should end up with two dictionaries:
+# - `nolli_data`: Contains the historical map data.
+# - `osm_data`: Contains modern OpenStreetMap features.
 
 # nolli_data = ...
 # osm_data = ...
@@ -31,105 +35,92 @@
 ###############################
 # 4) Extract relevant info from Nolli data
 ###############################
-# HINT: The top-level structure of the loaded GeoJSON looks like:
-# {
-#   "type": "FeatureCollection",
-#   "features": [
-#       {
-#           "type": "Feature",
-#           "geometry": {...},
-#           "properties": {...}
-#       },
-#       ...
-#   ]
-# }
-# 
-# For each feature, you can gather necessary attributes:
-#  - Unique Nolli ID (e.g., "properties"]["Nolli Number"])
-#  - Potential names from different fields (e.g., "Nolli Name", "Unravelled Name", "Modern Name")
-#  - Geometry object (to store or compare coordinates)
+# HINT: Each feature in `nolli_data["features"]` represents a historical landmark or road.
+# You need to:
+# 1️⃣ Extract the unique "Nolli Number" for each feature (use it as the dictionary key).
+# 2️⃣ Extract the possible names for each feature from:
+#    - "Nolli Name"
+#    - "Unravelled Name"
+#    - "Modern Name"
+# 3️⃣ Store the feature's coordinates (geometry).
 #
-# HINT: Store the extracted information in a dictionary, e.g.:
-# nolli_relevant_data = {
-#   nolli_id: {
-#       "nolli_names": [...],   # list of possible names
-#       "nolli_coords": {...},  # the geometry from the nolli feature
-#       # "match": None         # place to store matched OSM info (later)
-#   },
-#   ...
+# Expected structure:
+# {
+#   "1319": {
+#       "nolli_names": [
+#           "Mole Adriana, or Castel S. Angelo",
+#           "Mole Adriana, or Castel Sant'Angelo",
+#           "Castel Sant'Angelo"
+#       ],
+#       "nolli_coords": {
+#           "type": "Point",
+#           "coordinates": [12.46670095, 41.90329709]
+#       }
+#   }
 # }
 
 # nolli_relevant_data = {}
 # nolli_features = nolli_data["features"]
+
 # for feature in nolli_features:
 #     properties = feature.get("properties", {})
-#     # 1) Extract the unique nolli_id
-#     # 2) Extract possible names (list)
-#     # 3) Extract geometry
-#     # 4) Store them in nolli_relevant_data
+#     # Extract the Nolli Number as the key
+#     # Extract the names
+#     # Extract the geometry
+#     # Store them inside nolli_relevant_data
 
 ###############################
 # 5) Fuzzy match with OSM data
 ###############################
-# HINT: The OSM data is also a FeatureCollection. 
-#       Each feature might have "properties" with a "name" field.
-#       We'll attempt to fuzzy match each Nolli name to the OSM "name".
+# HINT: The `osm_data["features"]` list contains modern landmarks and roads.
+# Each feature has a "name" field in its properties.
 #
-# HINT: Use the utils function `find_best_matches(search_names, features, key_field="name", threshold=85, ...)`
-#       to find the best OSM feature match for each set of Nolli names.
-#       - search_names: the list of Nolli potential names
-#       - features: the "features" from OSM data
-#       - key_field: "name" (default), or another property
-#       - threshold: 85 (for example)
+# For each Nolli entry:
+# ✅ Compare its names with the "name" field of OSM features.
+# ✅ Use fuzzy matching to find the closest match.
+# ✅ Store the best match in the `nolli_relevant_data` dictionary.
 #
-# This function returns:
-#   (best_match, count)
-# where best_match might look like:
-#   ("OSM name found", "Nolli name used for match", similarity_score, {"osm_coords": [lng, lat]})
-# 
-# HINT: Store this match in the nolli_relevant_data dictionary under "match".
+# Use the function `find_best_matches()`:
+# - Pass the list of names from Nolli.
+# - Search in the OSM dataset using `key_field="name"`.
+# - Set `threshold=85` (minimum similarity score).
+# - Use `scorer="partial_ratio"` for better matching.
 
+print(f"Searching best match for Nolli names:")
+
+# counter = 0  # To track the number of successful matches
 # for nolli_id, values in nolli_relevant_data.items():
-#     possible_names = values["nolli_names"]
-#     match_result, match_count = find_best_matches(possible_names, osm_data["features"], ...)
-#     values["match"] = match_result
-#     # Keep track of how many matches you found if you want.
+#     print(f"\t{nolli_id}\t{values['nolli_names'][0]}")  # Print first name for reference
+#
+#     # Get the best match from OSM data
+#     # match, j = find_best_matches(...)
+#
+#     # counter += j  # Update match counter
+#     # nolli_relevant_data[nolli_id]["match"] = match  # Store the match
+
+# print(f"MATCHED {counter} NOLLI ENTRIES")
 
 ###############################
-# 6) Save to JSON and GeoJSON
+# 6) Save results as JSON and GeoJSON
 ###############################
-# HINT: Use `save_to_json(data, "matched_nolli_features.json")` 
-#       to store your final dictionary structure in a JSON file.
+# HINT: Once all matches are found, save the results in two formats:
+# ✅ `matched_nolli_features.json` → Standard JSON format for analysis.
+# ✅ `matched_nolli_features.geojson` → A structured GeoJSON file for visualization.
 #
-# HINT: The structure of nolli_relevant_data might look like:
-# {
-#   "123": {
-#       "nolli_names": ["San Giovanni", "Chiesa di S. Giovanni", ...],
-#       "nolli_coords": {
-#           "type": "Point",
-#           "coordinates": [12.500, 41.900]
-#       },
-#       "match": ("Chiesa di San Giovanni", "Chiesa di S. Giovanni", 90, {"osm_coords": [12.501, 41.901]})
-#   },
-#   ...
-# }
-#
-# HINT: Then use `save_to_geojson(data, "matched_nolli_features.geojson")`
-#       to convert each matched item to a valid GeoJSON FeatureCollection.
-#
-# The `save_to_geojson` function will look for:
-#   item["match"] -> best match tuple
-#   item["nolli_names"] (first name used for "Nolli_Name")
-#   item["nolli_coords"]
-#   etc.
+# Use:
+# - `save_to_json(nolli_relevant_data, "matched_nolli_features.json")`
+# - `save_to_geojson(nolli_relevant_data, "matched_nolli_features.geojson")`
 
-# save_to_json(nolli_relevant_data, "matched_nolli_features.json")
-# save_to_geojson(nolli_relevant_data, "matched_nolli_features.geojson")
+# save_to_json(...)
+# save_to_geojson(...)
+
+print("Matching complete. Results saved.")
 
 ###############################
 # 7) Visualization
 ###############################
-# HINT: Finally, you can upload the generated "matched_nolli_features.geojson" 
-#       to [geojson.io](http://geojson.io/) to visualize your matched points.
+# 🎯 **Final Task**: Upload `matched_nolli_features.geojson` to:
+# 🔗 **[geojson.io](https://geojson.io/)**
 #
-# TIP: Evaluate how well they match and if the coordinates line up on the map!
+# 📌 Observe if the matched features align correctly.
+# 📝 Take a screenshot and submit it as proof of completion!

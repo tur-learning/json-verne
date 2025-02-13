@@ -146,7 +146,9 @@ def save_to_json(data, output_file):
 
 def save_to_geojson(data, output_file):
     """
-    Saves matched results to a GeoJSON file.
+    Saves matched results to a GeoJSON file with two distinct points per feature:
+    - The Nolli coordinate as one point
+    - The matched OSM coordinate as another point (if available)
 
     Parameters:
     data (dict): Dictionary containing matched Nolli data with coordinates.
@@ -158,22 +160,45 @@ def save_to_geojson(data, output_file):
     features = []
     
     for nolli_id, values in data.items():
-        if "match" in values and values["match"] is not None:
-            match_data = values["match"]
-            feature = {
+        # Check if nolli_coords exists and has valid coordinates
+        if "nolli_coords" in values and values["nolli_coords"] and "coordinates" in values["nolli_coords"]:
+            nolli_point = {
                 "type": "Feature",
                 "properties": {
                     "Nolli_ID": nolli_id,
-                    "Nolli_Name": values["nolli_names"][0],
-                    "Matched_Name": match_data[1],
-                    "Match_Score": match_data[3]
+                    "Nolli_Name": values["nolli_names"][0],  # First name for reference
+                    "Marker_Type": "Nolli",  # Marker identifier for styling
                 },
                 "geometry": {
                     "type": "Point",
-                    "coordinates": match_data[-1]["osm_coords"]
+                    "coordinates": values["nolli_coords"]["coordinates"]
                 }
             }
-            features.append(feature)
+            features.append(nolli_point)
+        else:
+            print(f"⚠️ Warning: No valid coordinates for Nolli ID {nolli_id}. Skipping.")
+
+        # If there is a match, add the corresponding OSM point
+        if "match" in values and values["match"] is not None:
+            match_data = values["match"]
+            if "osm_coords" in match_data[-1] and match_data[-1]["osm_coords"]:
+                osm_point = {
+                    "type": "Feature",
+                    "properties": {
+                        "Nolli_ID": nolli_id,
+                        "Nolli_Name": values["nolli_names"][0],
+                        "Matched_Name": match_data[0],  # Matched OSM name
+                        "Match_Score": match_data[2],  # Similarity score
+                        "Marker_Type": "OSM",  # Marker identifier for styling
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": match_data[-1]["osm_coords"]
+                    }
+                }
+                features.append(osm_point)
+            else:
+                print(f"⚠️ Warning: No valid OSM coordinates for Nolli ID {nolli_id}. Skipping.")
 
     geojson_output = {
         "type": "FeatureCollection",
@@ -183,7 +208,7 @@ def save_to_geojson(data, output_file):
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(geojson_output, f, indent=2, ensure_ascii=False)
     
-    print(f"GeoJSON results saved to {output_file}")
+    print(f"✅ GeoJSON results saved to {output_file}")
 
 
 def link2map(data):
