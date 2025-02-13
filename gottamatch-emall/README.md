@@ -16,7 +16,7 @@ You will work with:
 ## 🎯 Your Tasks
 ### **1️⃣ Extract Required GeoJSON Files**
 - Extract the files `nolli_points_open.geojson` and `osm_node_way_relation.geojson` from `geojson_data.zip`.
-- **Hint:** Use `extract_geojson_files()` from `utils.py`.
+- **Hint:** Use `extract_files()` from `utils.py`.
 
 ### **2️⃣ Load GeoJSON Data**
 - Load both extracted files into Python dictionaries.
