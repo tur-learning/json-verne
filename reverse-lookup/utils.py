@@ -3,7 +3,10 @@ import math
 import zipfile
 import os
 from thefuzz import fuzz, process
-
+from scipy.spatial import cKDTree
+from shapely.geometry import shape
+import numpy as np
+from geopy.distance import geodesic
 
 def extract_files(zip_filename, filenames, extract_path="."):
     """
@@ -290,3 +293,89 @@ def get_nearest(iterable, objects):
     """
     index = min(enumerate(iterable), key=lambda x: x[1])[0]
     return objects[index]
+
+
+def find_closest_matches(dataset_1, dataset_2, use_geodesic=False):
+    """
+    Finds the closest matching element in dataset_2 for each element in dataset_1 
+    based on centroid distance.
+
+    Args:
+        dataset_1 (list): List of GeoJSON-like feature objects to match from.
+        dataset_2 (list): List of GeoJSON-like feature objects to match against.
+        use_geodesic (bool, optional): If True, computes geodesic distances (great-circle). 
+                                       Defaults to False (Euclidean distance for projected coordinates).
+
+    Returns:
+        list: A list of tuples, where each tuple contains:
+            - The original feature from dataset_1
+            - The closest feature from dataset_2
+            - The computed distance (in meters if geodesic, otherwise in dataset units)
+
+    Raises:
+        ValueError: If either dataset_1 or dataset_2 is empty.
+    """
+
+    if not dataset_1 or not dataset_2:
+        raise ValueError("Both dataset_1 and dataset_2 must contain at least one element.")
+
+    dataset_1_coords = []
+    for feature in dataset_1:
+        dataset_1_coords.append([shape(feature['geometry']).centroid.x, shape(feature['geometry']).centroid.y])
+        
+    dataset_2_coords = []
+    for feature in dataset_2:
+        dataset_2_coords.append([shape(feature['geometry']).centroid.x, shape(feature['geometry']).centroid.y])
+
+    if use_geodesic:
+        # Geodesic distance computation (great-circle, useful for lat/lon)
+        dataset_1_coords = [(lat, lon) for lon, lat in dataset_1_coords]
+        dataset_2_coords = [(lat, lon) for lon, lat in dataset_2_coords]
+
+        closest_matches = []
+        for feature_1, coord_1 in zip(dataset_1, dataset_1_coords):
+            # Find the closest match using geodesic distance
+            closest_feature, min_distance = min(
+                ((feature_2, geodesic(coord_1, coord_2).meters) for feature_2, coord_2 in zip(dataset_2, dataset_2_coords)),
+                key=lambda x: x[1]
+            )
+            closest_matches.append((feature_1, closest_feature, min_distance))
+
+    else:
+        # Use KD-Tree for fast Euclidean distance lookup
+        dataset_1_coords = np.array(dataset_1_coords)
+        dataset_2_coords = np.array(dataset_2_coords)
+
+        tree = cKDTree(dataset_2_coords)
+        distances, indices = tree.query(dataset_1_coords, k=1)
+
+        # Map results back to the original dataset
+        closest_matches = [(dataset_1[i], dataset_2[indices[i]]) for i in range(len(dataset_1))]
+
+    return closest_matches
+
+
+def convert_to_geojson(data, output_filename):
+    """
+    Converts a list of lists containing two dictionaries (GeoJSON features) into a single GeoJSON FeatureCollection.
+    Saves the output as a .geojson file.
+    
+    :param data: List of lists containing two dictionaries representing GeoJSON features.
+    :param output_filename: The name of the output GeoJSON file.
+    """
+    geojson = {
+        "type": "FeatureCollection",
+        "features": []
+    }
+    
+    # Flatten the nested lists and append features
+    for feature_list in data:
+        for feature in feature_list:
+            if isinstance(feature, dict) and "type" in feature and feature["type"] == "Feature":
+                geojson["features"].append(feature)
+    
+    # Save to file
+    with open(output_filename, "w", encoding="utf-8") as f:
+        json.dump(geojson, f, indent=4)
+    
+    print(f"GeoJSON saved to {output_filename}")
