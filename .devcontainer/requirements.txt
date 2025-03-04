@@ -1,1 +1,4 @@
 thefuzz
+scipy
+shapely
+geopy
