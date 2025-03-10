@@ -1,5 +1,5 @@
 # Use an official Python 3.12 base image
-# FROM mcr.microsoft.com/devcontainers/python:3.12
+FROM mcr.microsoft.com/devcontainers/python:3.12
 
 # Set working directory
 WORKDIR /workspace
