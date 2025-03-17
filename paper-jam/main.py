@@ -20,7 +20,9 @@ client.predict(api_name="/start_session")
 # 2. Preprocess an image for the pipeline.
 #    "handle_file(path_to_image)" tells the client to either upload a local file or download
 #    from a remote URL, so the server will receive it in the correct format for the "image" input.
-image_path = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/1280px-Colosseo_2020.jpg"
+
+image_path = ... # COPY IMAGE PATH HERE
+
 processed_image = client.predict(
     image=handle_file(image_path),
     api_name="/preprocess_image"
