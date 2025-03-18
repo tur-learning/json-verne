@@ -11,7 +11,7 @@ YOUR_TOKEN = ... # COPY YOUR HF TOKEN HERE
 
 # Create a client object that points to the Gradio (Hugging Face) Space where our app runs.
 # "secret_key" is your Hugging Face token if the Space is private or requires authentication.
-client = Client("tur-learning/TRELLIS", hf_token=YOUR_TOKEN)
+client = Client("turome-learning/TRELLIS", hf_token=YOUR_TOKEN)
 
 # 1. Start a session on the remote app (optional in many cases, but some apps require it).
 #    This can create a dedicated folder or initialize user-specific state on the server side.
