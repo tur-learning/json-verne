@@ -4,3 +4,4 @@ shapely
 geopy
 requests
 gradio_client
+pillow
