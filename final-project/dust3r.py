@@ -1,5 +1,6 @@
 import requests
 import os
+from utils import zip_images
 
 def send_request(glb_file_path):
     print("Sending request to HuggingFace endpoint")
@@ -22,4 +23,6 @@ def send_request(glb_file_path):
 
 
 if __name__ == "__main__":
+    image_dir = "preprocessed"
+    zip_images(image_dir, "photos.zip")
     send_request("photos.zip")

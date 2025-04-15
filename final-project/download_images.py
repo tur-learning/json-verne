@@ -1,16 +1,9 @@
 import requests
 import os
 
-# # Example images – replace these URLs with your actual image files or local paths
-# # (must be at least 2 images for matching to work meaningfully)
-# image_urls = [
-#     "./img/pisa.jpg"  # repeat for testing
-# ]
-
-# # Convert remote image URLs into files that the client can upload
-# filelist = [handle_file(url) for url in image_urls]
-
 # Google Drive file IDs
+# You may want to add file ids to the config file, so the user
+# can chose them without modifying the code
 file_ids = [
     "17QxZpfjLsL5BElf0OYNwBU0hq4wr1MG_",
     "19vAoGLwLDXrr620WHmpkNXiNwZXCVcnt",
